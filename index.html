@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghar Kharcha - Family Expense Manager</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- BoxIcons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf for exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="light-mode">
+    
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Authentication Screen -->
+    <div id="auth-container" class="auth-section active">
+        <div class="auth-glass-card">
+            <div class="auth-header">
+                <i class='bx bx-rupee auth-logo'></i>
+                <h2>Ghar Kharcha</h2>
+                <p>Manage your family's daily finances easily.</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="tab-btn active" onclick="switchAuthTab('login')">Sign In</button>
+                <button class="tab-btn" onclick="switchAuthTab('signup')">Create Account</button>
+            </div>
+
+            <form id="login-form" class="auth-form active">
+                <div class="input-group">
+                    <i class='bx bx-user'></i>
+                    <input type="text" id="login-username" placeholder="Mobile Number or Username" required>
+                </div>
+                <div class="input-group">
+                    <i class='bx bx-lock-alt'></i>
+                    <input type="password" id="login-password" placeholder="PIN or Password" required>
+                </div>
+                <button type="submit" class="primary-btn">Log In</button>
+            </form>
+
+            <form id="signup-form" class="auth-form">
+                <div class="input-group">
+                    <i class='bx bx-user'></i>
+                    <input type="text" id="signup-name" placeholder="Full Name" required>
+                </div>
+                <div class="input-group">
+                    <i class='bx bx-user-pin'></i>
+                    <input type="text" id="signup-username" placeholder="Username" required>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="input-group" style="flex: 1;">
+                        <i class='bx bx-calendar'></i>
+                        <input type="number" id="signup-age" placeholder="Age" min="10" required>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <select id="signup-gender" required style="padding-left: 1rem;">
+                            <option value="">Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <i class='bx bx-mobile-alt'></i>
+                    <input type="text" id="signup-mobile" placeholder="Mobile Number" required>
+                </div>
+                <div class="input-group">
+                    <i class='bx bx-lock-alt'></i>
+                    <input type="password" id="signup-password" placeholder="Create PIN or Password" required>
+                </div>
+                <button type="submit" class="primary-btn">Sign Up</button>
+            </form>
+        </div>
+        
+        <!-- Decorative Background Elements -->
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- Main Application UI -->
+    <div id="app-container" class="app-layout" style="display: none;">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <i class='bx bx-rupee'></i>
+                <h2>Ghar Kharcha</h2>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-page="dashboard" onclick="navigate('dashboard')">
+                    <i class='bx bxs-dashboard'></i> <span>Dashboard</span>
+                </li>
+                <li data-page="transactions" onclick="navigate('transactions')">
+                    <i class='bx bx-list-ul'></i> <span>Transactions</span>
+                </li>
+                <li data-page="analytics" onclick="navigate('analytics')">
+                    <i class='bx bx-bar-chart-alt-2'></i> <span>Analytics</span>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar"><i class='bx bx-user'></i></div>
+                    <div class="user-info">
+                        <span id="display-name">User</span>
+                        <small>Family Admin</small>
+                    </div>
+                </div>
+                <button id="logout-btn" onclick="logout()"><i class='bx bx-log-out'></i></button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Top Navigation -->
+            <header class="topbar glass-panel">
+                <div class="search-bar">
+                    <i class='bx bx-search'></i>
+                    <input type="text" id="global-search" placeholder="Search transactions...">
+                </div>
+                <div class="topbar-actions">
+                    <button class="icon-btn" onclick="toggleTheme()" title="Toggle Dark Mode">
+                        <i class='bx bx-moon' id="theme-icon"></i>
+                    </button>
+                    <!-- Force currency to INR only -->
+                    <div class="currency-display" style="font-weight: bold; color: var(--accent-primary); padding: 0.5rem 1rem; background: var(--glass-bg); border-radius: 8px;">
+                        Currency: ₹ (INR)
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view-section active">
+                <div class="page-header">
+                    <div>
+                        <h1>Overview</h1>
+                        <p class="subtitle">Namaste! Here is your family's financial summary.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="primary-btn btn-green shadow-btn" onclick="openTransactionModal('income')">
+                            <i class='bx bx-plus-circle'></i> Add Income
+                        </button>
+                        <button class="primary-btn btn-red shadow-btn" onclick="openTransactionModal('expense')">
+                            <i class='bx bx-minus-circle'></i> Add Expense
+                        </button>
+                        <button class="secondary-btn" onclick="exportData('pdf')">
+                            <i class='bx bxs-file-pdf'></i> Export PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="card glass-card">
+                        <div class="card-icon blue"><i class='bx bx-wallet'></i></div>
+                        <div class="card-info">
+                            <h3>Current Balance</h3>
+                            <h2 id="total-balance-display">₹0.00</h2>
+                            <p class="trend">Total Available Funds</p>
+                        </div>
+                    </div>
+                    <div class="card glass-card">
+                        <div class="card-icon green"><i class='bx bx-trending-up'></i></div>
+                        <div class="card-info">
+                            <h3>Total Income (Salary/Pocket Money)</h3>
+                            <h2 id="total-income-display" style="color: var(--success);">₹0.00</h2>
+                            <p class="trend positive">This Month</p>
+                        </div>
+                    </div>
+                    <div class="card glass-card">
+                        <div class="card-icon red"><i class='bx bx-trending-down'></i></div>
+                        <div class="card-info">
+                            <h3>Total Expenses</h3>
+                            <h2 id="total-expense-display" style="color: var(--danger);">₹0.00</h2>
+                            <p class="trend negative">This Month</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Missing Expense Suggestions -->
+                <div id="expense-suggestions-container" style="display: none; margin-bottom: 2rem; padding: 1rem; background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); border-radius: 12px;">
+                    <h4 style="color: var(--warning); margin-bottom: 0.5rem;"><i class='bx bx-bulb'></i> Did you miss any expenses this month?</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Based on common Indian households, you haven't added expenses for:</p>
+                    <div id="missing-expenses-list" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                </div>
+
+                <!-- Charts & Recent Activity -->
+                <div class="dashboard-grid">
+                    <div class="chart-container glass-card">
+                        <div class="card-header">
+                            <h3>Expense Trends</h3>
+                            <select id="trend-timeframe" class="small-select" onchange="renderTrendChart()">
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    
+                    <div class="recent-transactions glass-card">
+                        <div class="card-header">
+                            <h3>Recent Activity</h3>
+                            <a href="#" onclick="navigate('transactions')">View All</a>
+                        </div>
+                        <div class="transaction-list" id="recent-transaction-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions View -->
+            <div id="transactions-view" class="view-section">
+                <div class="page-header">
+                    <h1>Transactions</h1>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="primary-btn btn-green" onclick="openTransactionModal('income')"><i class='bx bx-plus'></i> Income</button>
+                        <button class="primary-btn btn-red" onclick="openTransactionModal('expense')"><i class='bx bx-minus'></i> Expense</button>
+                    </div>
+                </div>
+                <div class="glass-card full-height">
+                    <div class="filter-bar">
+                        <select id="filter-type">
+                            <option value="all">All Types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                        <select id="filter-category">
+                            <option value="all">All Categories</option>
+                            <!-- Populated dynamically based on type -->
+                        </select>
+                        <input type="date" id="filter-date">
+                        <button class="secondary-btn" onclick="exportData('csv')">Export CSV</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="transaction-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics View -->
+            <div id="analytics-view" class="view-section">
+                <div class="page-header">
+                    <h1>Analytics</h1>
+                </div>
+                <div class="analytics-grid">
+                    <div class="chart-container glass-card">
+                        <h3>Expenses by Category</h3>
+                        <div class="pie-chart-wrapper">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container glass-card">
+                        <h3>Income vs Expense</h3>
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Add Transaction Modal -->
+    <div id="transaction-modal" class="modal-overlay">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Transaction</h3>
+                <button class="close-btn" onclick="closeTransactionModal()"><i class='bx bx-x'></i></button>
+            </div>
+            <form id="transaction-form">
+                <input type="hidden" id="trans-id">
+                <input type="hidden" id="trans-type"> <!-- 'income' or 'expense' -->
+                
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="trans-amount" step="1" min="1" required placeholder="Enter amount e.g. 500">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="trans-desc" list="desc-suggestions" required placeholder="What was this for?">
+                    <datalist id="desc-suggestions">
+                        <option value="Maid Salary"></option>
+                        <option value="Electricity Bill"></option>
+                        <option value="Fuel for Vehicle"></option>
+                        <option value="Internet/WiFi Bill"></option>
+                        <option value="Groceries"></option>
+                        <option value="Mobile Recharge"></option>
+                        <option value="Water Bill"></option>
+                        <option value="School Fees"></option>
+                        <option value="Medicines"></option>
+                        <option value="Pocket Money"></option>
+                        <option value="Salary"></option>
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="trans-category" required>
+                        <!-- Options injected via JS based on type -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="trans-date" required>
+                </div>
+                <button type="submit" class="primary-btn full-width" id="submit-trans-btn">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
